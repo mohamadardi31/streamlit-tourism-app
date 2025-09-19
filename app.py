@@ -121,5 +121,3 @@ if uploaded_file:
 			st.info("District column not found. Please check your data.")
 else:
 	st.info("Please upload a CSV file with the required columns.")
-brew install ngrok
-ngrok http 8501
