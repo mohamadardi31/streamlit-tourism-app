@@ -66,10 +66,8 @@ if uploaded_file:
 		ax_bar.set_title("Top Towns by Number of Hotels")
 		ax_bar.set_xticklabels(hotels_top["Town"], rotation=35, ha="right")
 		st.pyplot(fig_bar)
-		        st.pyplot(fig_bar)
-
-        # Insights for Tab 3
-        st.markdown("""
+		st.pyplot(fig_bar)
+		st.markdown("""
 **Insight:** Highlights which towns have the most hotels and the ranking order. Being able to now increase and decrease the number of cities viewed can make it easier for analysts to compare the number of hotels across a smaller or greater horizon. This can make it simpler to find discrepancies across towns.
 
 - **Bqerqacha leads significantly**
@@ -135,20 +133,19 @@ if uploaded_file:
 			fig2.colorbar(im, ax=ax2, label="Count")
 			st.pyplot(fig2)
 		    st.pyplot(fig_bar)
+		    st.pyplot(fig2)
+		    st.markdown("""
+**Insight:** Reveals which districts have more or fewer types of infrastructure. Now that we can filter it out, it’s even easier to compare down to 1 infrastructure type or 1 district, making it clearer for data analysts to observe and presentation viewers to see as well.
 
-        # Insights for Tab 3
-            st.markdown("""
-**Insight:** Highlights which towns have the most hotels and the ranking order. Being able to now increase and decrease the number of cities viewed can make it easier for analysts to compare the number of hotels across a smaller or greater horizon. This can make it simpler to find discrepancies across towns.
-
-- **Bqerqacha leads significantly**
-- With **20 hotels**, Bqerqacha stands out as the top town, indicating it is likely a strong tourism or lodging hub compared to the others.
-- **Concentration in the top few towns**
-- The top 3 towns (**Bqerqacha, Zgharta-Ehden, Bcharreh**) together account for **over 50%** of the hotels among the top 10, showing a concentration of hospitality infrastructure in a few areas.
-- **Gradual decline after the top tier**
-- After **Bcharreh (15 hotels)**, the numbers drop more sharply, with towns like **Jbeil** and **Kfar Dibiane** only having around **8 hotels**, showing a clear second tier of smaller hotel markets.
-- **Smaller towns still make the list**
-- Towns like **Shawagheer El-Faouqa, Zahleh El-Maallaqa, and Lala** only have **5 hotels** each, but they still rank among the top 10, suggesting that the overall hotel distribution across towns is relatively low and competitive.
-        """)
+1. **Baabda, Akkar, and Matn dominate tourism services**  
+   - Baabda District (**291 cafés, 301 restaurants, 22 guesthouses**) and Akkar Governorate (**360 cafés, 147 restaurants, 103 guesthouses**) stand out with very high infrastructure counts. Matn District also shows a high concentration with **238 restaurants and 17 guesthouses**, making these three areas major hubs.
+2. **Cafés and restaurants far outnumber hotels**  
+   - In nearly all districts, the number of cafés and restaurants is significantly higher than hotels. For example, Baabda has only **17 hotels** compared to **291 cafés** and **301 restaurants**, showing a heavy skew toward food and beverage infrastructure.
+3. **Regional imbalance is evident**  
+   - Some districts like **Marjeyoun** and **Hermel** have very few facilities overall (close to single digits in hotels and cafés), suggesting underdeveloped tourism infrastructure compared to coastal and central districts.
+4. **Guesthouses are concentrated in specific areas**  
+   - **Akkar (103)**, **Baalbek-Hermel (89)**, and **Tyre (83)** have relatively high numbers of guesthouses, while many districts (like **Hasbaya** or **Marjeyoun**) barely register any. This indicates that certain regions attract alternative lodging development, possibly linked to rural or eco-tourism.
+            """)
 
 		else:
 			st.info("District column not found. Please check your data.")
