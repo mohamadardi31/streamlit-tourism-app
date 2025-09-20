@@ -9,65 +9,89 @@ st.title("Tourism Data Interactive Dashboard")
 
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file:
-	df = pd.read_csv(uploaded_file)
-	df.columns = [c.strip() for c in df.columns]
-	# Clean and convert columns
-	df["Tourism Index"] = pd.to_numeric(df["Tourism Index"], errors="coerce")
-	df["Total number of hotels"] = pd.to_numeric(df["Total number of hotels"], errors="coerce")
-	df["Total number of cafes"] = pd.to_numeric(df["Total number of cafes"], errors="coerce")
-	df["Total number of restaurants"] = pd.to_numeric(df["Total number of restaurants"], errors="coerce")
-	df["Total number of guest houses"] = pd.to_numeric(df["Total number of guest houses"], errors="coerce")
-	# Extract District from refArea if needed
-	if "refArea" in df.columns:
-		df["District"] = df["refArea"].astype(str).str.rsplit("/", n=1).str[-1].apply(unquote).str.replace("_", " ")
+    df = pd.read_csv(uploaded_file)
+    df.columns = [c.strip() for c in df.columns]
 
-	# Search/filter box for towns and districts
-	st.sidebar.header("Filter Data")
-	search_town = st.sidebar.text_input("Search Town")
-	search_district = st.sidebar.text_input("Search District")
-	filtered_df = df.copy()
-	if search_town:
-		filtered_df = filtered_df[filtered_df["Town"].str.contains(search_town, case=False, na=False)]
-	if "District" in filtered_df.columns and search_district:
-		filtered_df = filtered_df[filtered_df["District"].str.contains(search_district, case=False, na=False)]
+    # Clean and convert columns
+    df["Tourism Index"] = pd.to_numeric(df.get("Tourism Index"), errors="coerce")
+    df["Total number of hotels"] = pd.to_numeric(df.get("Total number of hotels"), errors="coerce")
+    df["Total number of cafes"] = pd.to_numeric(df.get("Total number of cafes"), errors="coerce")
+    df["Total number of restaurants"] = pd.to_numeric(df.get("Total number of restaurants"), errors="coerce")
+    df["Total number of guest houses"] = pd.to_numeric(df.get("Total number of guest houses"), errors="coerce")
 
-	# Tabs for each visualization
-	tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-		"Data Preview", "Tourism Index Histogram", "Top Towns by Hotels", "Stacked Bars by District", "Exploitable Attractions Pie", "Infrastructure Heatmap"])
+    # Extract District from refArea if needed
+    if "refArea" in df.columns and "District" not in df.columns:
+        df["District"] = (
+            df["refArea"].astype(str).str.rsplit("/", n=1).str[-1].apply(unquote).str.replace("_", " ")
+        )
 
-	with tab1:
-		st.write("## Data Preview", filtered_df.head(50))
-		st.write("### Download Filtered Data")
-		st.download_button("Download CSV", filtered_df.to_csv(index=False), "filtered_data.csv")
-		st.write("### Summary Statistics")
-		st.write(filtered_df.describe(include='all'))
+    # Search/filter box for towns and districts
+    st.sidebar.header("Filter Data")
+    search_town = st.sidebar.text_input("Search Town")
+    search_district = st.sidebar.text_input("Search District")
 
-	with tab2:
-		st.subheader("Distribution of Tourism Index Across Towns")
-		min_index = float(filtered_df["Tourism Index"].min())
-		max_index = float(filtered_df["Tourism Index"].max())
-		bins = st.slider("Number of bins", min_value=5, max_value=50, value=20)
-		index_range = st.slider("Tourism Index Range", min_value=min_index, max_value=max_index, value=(min_index, max_index))
-		filtered = filtered_df[(filtered_df["Tourism Index"] >= index_range[0]) & (filtered_df["Tourism Index"] <= index_range[1])]
-		fig, ax = plt.subplots(figsize=(8,5))
-		filtered["Tourism Index"].dropna().plot(kind="hist", bins=bins, ax=ax)
-		ax.set_title("Distribution of Tourism Index Across Towns")
-		ax.set_xlabel("Tourism Index")
-		ax.set_ylabel("Number of Towns")
-		st.pyplot(fig)
-		
+    filtered_df = df.copy()
+    if "Town" in filtered_df.columns and search_town:
+        filtered_df = filtered_df[filtered_df["Town"].str.contains(search_town, case=False, na=False)]
+    if "District" in filtered_df.columns and search_district:
+        filtered_df = filtered_df[filtered_df["District"].str.contains(search_district, case=False, na=False)]
 
-	with tab3:
-		st.subheader("Top Towns by Number of Hotels")
-		top_n = st.slider("Number of towns to show", min_value=5, max_value=20, value=10)
-		hotels_top = filtered_df[["Town", "Total number of hotels"]].dropna().sort_values("Total number of hotels", ascending=False).head(top_n)
-		fig_bar, ax_bar = plt.subplots(figsize=(10,5))
-		ax_bar.bar(hotels_top["Town"], hotels_top["Total number of hotels"])
-		ax_bar.set_title("Top Towns by Number of Hotels")
-		ax_bar.set_xticklabels(hotels_top["Town"], rotation=35, ha="right")
-		st.pyplot(fig_bar)
-		st.pyplot(fig_bar)
-		st.markdown("""
+    # Tabs for each visualization
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "Data Preview", "Tourism Index Histogram", "Top Towns by Hotels",
+        "Stacked Bars by District", "Exploitable Attractions Pie", "Infrastructure Heatmap"
+    ])
+
+    with tab1:
+        st.write("## Data Preview", filtered_df.head(50))
+        st.write("### Download Filtered Data")
+        st.download_button("Download CSV", filtered_df.to_csv(index=False), "filtered_data.csv")
+        st.write("### Summary Statistics")
+        st.write(filtered_df.describe(include="all"))
+
+    with tab2:
+        st.subheader("Distribution of Tourism Index Across Towns")
+        if filtered_df["Tourism Index"].notna().any():
+            min_index = float(filtered_df["Tourism Index"].min())
+            max_index = float(filtered_df["Tourism Index"].max())
+            bins = st.slider("Number of bins", min_value=5, max_value=50, value=20)
+            index_range = st.slider(
+                "Tourism Index Range", min_value=min_index, max_value=max_index, value=(min_index, max_index)
+            )
+            filtered = filtered_df[
+                (filtered_df["Tourism Index"] >= index_range[0]) & (filtered_df["Tourism Index"] <= index_range[1])
+            ]
+            fig, ax = plt.subplots(figsize=(8, 5))
+            filtered["Tourism Index"].dropna().plot(kind="hist", bins=bins, ax=ax)
+            ax.set_title("Distribution of Tourism Index Across Towns")
+            ax.set_xlabel("Tourism Index")
+            ax.set_ylabel("Number of Towns")
+            st.pyplot(fig)
+        else:
+            st.info("No Tourism Index data available to plot.")
+
+    with tab3:
+        st.subheader("Top Towns by Number of Hotels")
+        if "Town" in filtered_df.columns and "Total number of hotels" in filtered_df.columns:
+            top_n = st.slider("Number of towns to show", min_value=5, max_value=20, value=10)
+            hotels_top = (
+                filtered_df[["Town", "Total number of hotels"]]
+                .dropna()
+                .sort_values("Total number of hotels", ascending=False)
+                .head(top_n)
+            )
+
+            fig_bar, ax_bar = plt.subplots(figsize=(10, 5))
+            x_pos = np.arange(len(hotels_top))
+            ax_bar.bar(x_pos, hotels_top["Total number of hotels"].values)
+            ax_bar.set_title("Top Towns by Number of Hotels")
+            ax_bar.set_xticks(x_pos)
+            ax_bar.set_xticklabels(hotels_top["Town"].astype(str).tolist(), rotation=35, ha="right")
+            ax_bar.set_ylabel("Number of Hotels")
+            st.pyplot(fig_bar)
+
+            # Insights for Tab 3
+            st.markdown("""
 **Insight:** Highlights which towns have the most hotels and the ranking order. Being able to now increase and decrease the number of cities viewed can make it easier for analysts to compare the number of hotels across a smaller or greater horizon. This can make it simpler to find discrepancies across towns.
 
 - **Bqerqacha leads significantly**
@@ -78,63 +102,96 @@ if uploaded_file:
 - After **Bcharreh (15 hotels)**, the numbers drop more sharply, with towns like **Jbeil** and **Kfar Dibiane** only having around **8 hotels**, showing a clear second tier of smaller hotel markets.
 - **Smaller towns still make the list**
 - Towns like **Shawagheer El-Faouqa, Zahleh El-Maallaqa, and Lala** only have **5 hotels** each, but they still rank among the top 10, suggesting that the overall hotel distribution across towns is relatively low and competitive.
-        """)
+            """)
+        else:
+            st.info("Required columns ('Town', 'Total number of hotels') not found.")
 
+    with tab4:
+        st.subheader("Tourism Infrastructure by District (Top 12)")
+        infra_cols = ["Total number of hotels", "Total number of cafes", "Total number of restaurants"]
+        existing_infra = [c for c in infra_cols if c in filtered_df.columns]
+        selected_infra = st.multiselect("Select infrastructure types", existing_infra, default=existing_infra)
 
-	with tab4:
-		st.subheader("Tourism Infrastructure by District (Top 12)")
-		infra_cols = ["Total number of hotels","Total number of cafes","Total number of restaurants"]
-		selected_infra = st.multiselect("Select infrastructure types", infra_cols, default=infra_cols)
-		infra = filtered_df.groupby("District")[selected_infra].sum()
-		infra["Total"] = infra.sum(axis=1)
-		infra = infra.sort_values("Total", ascending=False).head(12)
-		x = np.arange(len(infra))
-		fig_stack, ax_stack = plt.subplots(figsize=(11,6))
-		bottom = np.zeros(len(infra))
-		for col in selected_infra:
-			ax_stack.bar(x, infra[col], bottom=bottom, label=col)
-			bottom += infra[col].values
-		ax_stack.set_xticks(x)
-		ax_stack.set_xticklabels(infra.index, rotation=35, ha="right")
-		ax_stack.set_title("Tourism Infrastructure by District (Top 12)")
-		ax_stack.legend()
-		st.pyplot(fig_stack)
+        if "District" in filtered_df.columns and selected_infra:
+            infra = filtered_df.groupby("District")[selected_infra].sum(numeric_only=True)
+            infra["Total"] = infra.sum(axis=1)
+            infra = infra.sort_values("Total", ascending=False).head(12)
 
-	with tab5:
-		st.subheader("Towns with Exploitable Attractions")
-		if "Existence of touristic attractions prone to be exploited and developed - exists" in filtered_df.columns:
-			counts = filtered_df["Existence of touristic attractions prone to be exploited and developed - exists"].fillna(0).astype(int).value_counts()
-			fig_pie, ax_pie = plt.subplots(figsize=(6,6))
-			ax_pie.pie([counts.get(0,0), counts.get(1,0)], labels=["No","Yes"], autopct="%1.1f%%", startangle=90)
-			ax_pie.set_title("Towns with Exploitable Attractions")
-			st.pyplot(fig_pie)
-		else:
-			st.info("Column for exploitable attractions not found.")
+            x = np.arange(len(infra))
+            fig_stack, ax_stack = plt.subplots(figsize=(11, 6))
+            bottom = np.zeros(len(infra))
+            for col in selected_infra:
+                ax_stack.bar(x, infra[col].values, bottom=bottom, label=col)
+                bottom += infra[col].values
 
-	with tab6:
-		st.subheader("Tourism Infrastructure by District (Heatmap)")
-		infra_columns = ["Total number of hotels","Total number of cafes","Total number of restaurants","Total number of guest houses"]
-		selected_columns = st.multiselect("Select infrastructure columns for heatmap", infra_columns, default=infra_columns)
-		if "District" in filtered_df.columns:
-			districts = filtered_df["District"].unique().tolist()
-			selected_districts = st.multiselect("Select districts for heatmap", districts, default=districts)
-			heatmap_data = filtered_df[filtered_df["District"].isin(selected_districts)].groupby("District")[selected_columns].sum().fillna(0)
-			data = heatmap_data.to_numpy()
-			fig2, ax2 = plt.subplots(figsize=(14,10))
-			im = ax2.imshow(data, cmap="YlOrRd", aspect="equal")
-			ax2.set_xticks(range(len(heatmap_data.columns)))
-			ax2.set_xticklabels(heatmap_data.columns, rotation=30, ha="right")
-			ax2.set_yticks(range(len(heatmap_data.index)))
-			ax2.set_yticklabels(heatmap_data.index)
-			ax2.set_title("Tourism Infrastructure by District (Heatmap)")
-			for i in range(data.shape[0]):
-				for j in range(data.shape[1]):
-					ax2.text(j, i, int(data[i,j]), ha="center", va="center", color="black")
-			fig2.colorbar(im, ax=ax2, label="Count")
-			st.pyplot(fig2)
-		    st.pyplot(fig_bar)
-		    st.pyplot(fig2)
-		    st.markdown("""
+            ax_stack.set_xticks(x)
+            ax_stack.set_xticklabels(infra.index.astype(str).tolist(), rotation=35, ha="right")
+            ax_stack.set_title("Tourism Infrastructure by District (Top 12)")
+            ax_stack.set_ylabel("Count")
+            ax_stack.legend()
+            st.pyplot(fig_stack)
+        else:
+            st.info("Please ensure 'District' and at least one infrastructure column are present.")
+
+    with tab5:
+        st.subheader("Towns with Exploitable Attractions")
+        col_name = "Existence of touristic attractions prone to be exploited and developed - exists"
+        if col_name in filtered_df.columns:
+            counts = filtered_df[col_name].fillna(0).astype(int).value_counts()
+            yes_count = int(counts.get(1, 0))
+            no_count = int(counts.get(0, 0))
+
+            fig_pie, ax_pie = plt.subplots(figsize=(6, 6))
+            ax_pie.pie([no_count, yes_count], labels=["No", "Yes"], autopct="%1.1f%%", startangle=90)
+            ax_pie.set_title("Towns with Exploitable Attractions")
+            st.pyplot(fig_pie)
+        else:
+            st.info("Column for exploitable attractions not found.")
+
+    with tab6:
+        st.subheader("Tourism Infrastructure by District (Heatmap)")
+        infra_columns = [
+            "Total number of hotels",
+            "Total number of cafes",
+            "Total number of restaurants",
+            "Total number of guest houses",
+        ]
+        existing_cols = [c for c in infra_columns if c in filtered_df.columns]
+        selected_columns = st.multiselect(
+            "Select infrastructure columns for heatmap", existing_cols, default=existing_cols
+        )
+
+        if "District" in filtered_df.columns and selected_columns:
+            districts = filtered_df["District"].dropna().unique().tolist()
+            selected_districts = st.multiselect("Select districts for heatmap", districts, default=districts)
+
+            heatmap_data = (
+                filtered_df[filtered_df["District"].isin(selected_districts)]
+                .groupby("District")[selected_columns]
+                .sum(numeric_only=True)
+                .fillna(0)
+            )
+
+            data = heatmap_data.to_numpy()
+            fig2, ax2 = plt.subplots(figsize=(14, 10))
+            im = ax2.imshow(data, cmap="YlOrRd", aspect="equal")
+
+            ax2.set_xticks(range(len(heatmap_data.columns)))
+            ax2.set_xticklabels(list(heatmap_data.columns), rotation=30, ha="right")
+            ax2.set_yticks(range(len(heatmap_data.index)))
+            ax2.set_yticklabels(list(heatmap_data.index))
+            ax2.set_title("Tourism Infrastructure by District (Heatmap)")
+
+            # Annotate each cell
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    ax2.text(j, i, int(data[i, j]), ha="center", va="center", color="black")
+
+            fig2.colorbar(im, ax=ax2, label="Count")
+            st.pyplot(fig2)
+
+            # Insights for Tab 6
+            st.markdown("""
 **Insight:** Reveals which districts have more or fewer types of infrastructure. Now that we can filter it out, it’s even easier to compare down to 1 infrastructure type or 1 district, making it clearer for data analysts to observe and presentation viewers to see as well.
 
 1. **Baabda, Akkar, and Matn dominate tourism services**  
@@ -146,8 +203,7 @@ if uploaded_file:
 4. **Guesthouses are concentrated in specific areas**  
    - **Akkar (103)**, **Baalbek-Hermel (89)**, and **Tyre (83)** have relatively high numbers of guesthouses, while many districts (like **Hasbaya** or **Marjeyoun**) barely register any. This indicates that certain regions attract alternative lodging development, possibly linked to rural or eco-tourism.
             """)
-
-		else:
-			st.info("District column not found. Please check your data.")
+        else:
+            st.info("District column not found or no infrastructure columns selected. Please check your data.")
 else:
-	st.info("Please upload a CSV file with the required columns.")
+    st.info("Please upload a CSV file with the required columns.")
